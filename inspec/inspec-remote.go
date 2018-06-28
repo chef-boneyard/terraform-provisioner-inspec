@@ -2,11 +2,12 @@ package inspec
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
-	"runtime"
+	"strings"
 
 	"github.com/armon/circbuf"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -21,21 +22,9 @@ const (
 	maxBufSize = 8 * 1024
 )
 
-func runRemote(ctx context.Context, s *terraform.InstanceState, data *schema.ResourceData, o terraform.UIOutput, profiles string) error {
-	cmd := "inspec exec " + profiles + " -t aws://"
-	return inspecExec(ctx, o, cmd, "", nil)
-}
+func runRemote(ctx context.Context, s *terraform.InstanceState, data *schema.ResourceData, o terraform.UIOutput, profiles []string, conf *TargetConfig) error {
 
-func inspecExec(ctx context.Context, o terraform.UIOutput, command string, workingdir string, env []string) error {
-
-	var cmdargs []string
-
-	if runtime.GOOS == "windows" {
-		cmdargs = []string{"cmd", "/C"}
-	} else {
-		cmdargs = []string{"/bin/sh", "-c"}
-	}
-	cmdargs = append(cmdargs, command)
+	cmdargs := buildInspecCommand(profiles)
 
 	// Setup the reader that will read the output from the command.
 	// We use an os.Pipe so that the *os.File can be passed directly to the
@@ -46,21 +35,21 @@ func inspecExec(ctx context.Context, o terraform.UIOutput, command string, worki
 		return fmt.Errorf("failed to initialize pipe for output: %s", err)
 	}
 
-	var cmdEnv []string
-	cmdEnv = os.Environ()
-	cmdEnv = append(cmdEnv, env...)
-
 	// Setup the command
 	cmd := exec.Command(cmdargs[0], cmdargs[1:]...)
 	cmd.Stderr = pw
 	cmd.Stdout = pw
-	// Dir specifies the working directory of the command.
-	// If Dir is the empty string (this is default), runs the command
-	// in the calling process's current directory.
-	cmd.Dir = workingdir
-	// Env specifies the environment of the command.
-	// By default will use the calling process's environment
-	cmd.Env = cmdEnv
+
+	jsonConf, err := json.Marshal(conf)
+	if err != nil {
+		return err
+	}
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return err
+	}
+	stdin.Write(jsonConf)
+	stdin.Close()
 
 	output, _ := circbuf.NewBuffer(maxBufSize)
 
@@ -72,7 +61,7 @@ func inspecExec(ctx context.Context, o terraform.UIOutput, command string, worki
 	go copyOutputChan(o, tee, copyDoneCh)
 
 	// Output what we're about to run
-	o.Output(fmt.Sprintf("Executing: %q", cmdargs))
+	o.Output(fmt.Sprintf("Executing: %s", strings.Join(cmdargs, " ")))
 
 	// Start the command
 	err = cmd.Start()
@@ -94,7 +83,7 @@ func inspecExec(ctx context.Context, o terraform.UIOutput, command string, worki
 
 	if err != nil {
 		return fmt.Errorf("Error running command '%s': %v. Output: %s",
-			command, err, output.Bytes())
+			strings.Join(cmdargs, " "), err, output.Bytes())
 	}
 
 	return nil

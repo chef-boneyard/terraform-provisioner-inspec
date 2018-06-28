@@ -144,6 +144,10 @@ resource "aws_instance" "web" {
       "supermarket://dev-sec/ssh-baseline",
     ]
 
+    reporter {
+      name = "json"
+    }
+
     on_failure = "continue"
   }
 }
@@ -156,14 +160,7 @@ resource "null_resource" "inspec_aws" {
     ]
 
     target {
-      "name"       = "aws"
-      "access_key" = "abc"
-      "secret_key" = "abc"
-      "region"     = "abc"
-    }
-
-    reporter {
-      name = "automate"
+      backend = "aws"
     }
 
     reporter {

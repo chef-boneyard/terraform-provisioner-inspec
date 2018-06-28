@@ -3,6 +3,7 @@ package inspec
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -16,7 +17,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func runLocal(ctx context.Context, s *terraform.InstanceState, data *schema.ResourceData, o terraform.UIOutput, profiles string) error {
+func runLocal(ctx context.Context, s *terraform.InstanceState, data *schema.ResourceData, o terraform.UIOutput, profiles []string, conf *TargetConfig) error {
 	// Get a new communicator
 	comm, err := communicator.New(s)
 	if err != nil {
@@ -24,7 +25,7 @@ func runLocal(ctx context.Context, s *terraform.InstanceState, data *schema.Reso
 	}
 
 	// Collect the scripts
-	scripts, err := inspecScript(o, data, profiles)
+	scripts, err := inspecScript(o, data, profiles, conf)
 	if err != nil {
 		return err
 	}
@@ -40,10 +41,15 @@ func runLocal(ctx context.Context, s *terraform.InstanceState, data *schema.Reso
 	return nil
 }
 
-func inspecScript(o terraform.UIOutput, d *schema.ResourceData, profiles string) ([]io.ReadCloser, error) {
+func inspecScript(o terraform.UIOutput, d *schema.ResourceData, profiles []string, conf *TargetConfig) ([]io.ReadCloser, error) {
+	jsonConf, err := json.Marshal(conf)
+	if err != nil {
+		return nil, err
+	}
+
 	lines := []string{
 		"curl -L https://omnitruck.chef.io/install.sh | sudo bash -s -- -P inspec",
-		"inspec exec " + profiles,
+		fmt.Sprintf("echo '%s' | %s", jsonConf, strings.Join(buildInspecCommand(profiles), " ")),
 	}
 
 	script := strings.Join(lines, "\n")

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
@@ -12,11 +11,40 @@ import (
 )
 
 type ReporterConfig struct {
+	Url         string `json:"url,omitempty"`
+	Token       string `json:"token,omitempty"`
+	NodeID      string `json:"node_uuid,omitempty"`
+	NodeName    string `json:"node_name,omitempty"`
+	Environment string `json:"environment,omitempty"`
+	ReportUUID  string `json:"report_uuid,omitempty"`
+	JobUUID     string `json:"job_uuid,omitempty"`
 }
 
-type InSpecConfig struct {
-	Reporter map[string]ReporterConfig `json:"reporter,omitempty"`
-	Sudo     bool                      `json:"sudo,omitempty"`
+type TargetConfig struct {
+	Backend  string `json:"backend,omitempty"`
+	Hostname string `json:"host,omitempty"`
+	Port     int    `json:"port,omitempty"`
+
+	User              string   `json:"user,omitempty"`
+	Password          string   `json:"password,omitempty"`
+	KeyFiles          []string `json:"key_files,omitempty"`
+	SudoPassword      string   `json:"sudo_password,omitempty"`
+	SudoOptions       string   `json:"sudo_options,omitempty"`
+	AwsUser           string   `json:"aws_user,omitempty"`
+	AwsPassword       string   `json:"aws_password,omitempty"`
+	AzureClientID     string   `json:"azure_client_id,omitempty"`
+	AzureClientSecret string   `json:"azure_client_secret,omitempty"`
+	AzureTenantID     string   `json:"azure_tenant_id,omitempty"`
+
+	LoginPath      string                    `json:"login_path,omitempty"`
+	Sudo           bool                      `json:"sudo,omitempty"`
+	Format         string                    `json:"format,omitempty"`
+	Reporter       map[string]ReporterConfig `json:"reporter,omitempty"`
+	Ssl            bool                      `json:"ssl,omitempty"`
+	SslSelfSigned  bool                      `json:"self_signed,omitempty"`
+	BackendCache   bool                      `json:"backend_cache,omitempty"`
+	Region         string                    `json:"region,omitempty"`
+	SubscriptionId string                    `json:"subscription_id,omitempty"`
 }
 
 func Provisioner() terraform.ResourceProvisioner {
@@ -34,7 +62,7 @@ func Provisioner() terraform.ResourceProvisioner {
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"name": &schema.Schema{
+						"backend": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
 						},
@@ -59,7 +87,7 @@ func Provisioner() terraform.ResourceProvisioner {
 			},
 
 			"reporter": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -98,28 +126,75 @@ func applyFn(ctx context.Context) error {
 	data := ctx.Value(schema.ProvConfigDataKey).(*schema.ResourceData)
 	o := ctx.Value(schema.ProvOutputKey).(terraform.UIOutput)
 
-	cliProfiles := ""
-	tprofiles := getStringList(data.Get("profiles"))
-	if len(tprofiles) > 0 {
-		cliProfiles = strings.Join(tprofiles, " ")
-	} else {
+	profiles := getStringList(data.Get("profiles"))
+	if len(profiles) == 0 {
 		return errors.New("new profile defined")
 	}
 
-	o.Output(fmt.Sprintf("Run the following profiles %v", cliProfiles))
+	o.Output(fmt.Sprintf("Run the following profiles %v", profiles))
 
 	// read the target
 	target := getStringMap(data.Get("target"))
-	switch target["name"] {
-	case "aws":
+	conf := parseTargetConfig(target)
+
+	// read reporter config
+	reporter := getStringMap(data.Get("reporter"))
+	conf.Reporter = parseReporterConfig(reporter)
+
+	switch conf.Backend {
+	case "aws", "azure", "gcp":
 		// create target url and use aws options
-		return runRemote(ctx, s, data, o, cliProfiles)
+		return runRemote(ctx, s, data, o, profiles, conf)
+	case "":
+		// install inspec and run it from the instance
+		return runLocal(ctx, s, data, o, profiles, conf)
 	default:
-		// run on the node itself
-		return runLocal(ctx, s, data, o, cliProfiles)
+		return errors.New(fmt.Sprintf("backend %s is not supported yet", conf.Backend))
 	}
 
 	return nil
+}
+
+func parseTargetConfig(target map[string]interface{}) *TargetConfig {
+	conf := &TargetConfig{
+		Backend:  getStringValue(target, "backend"),
+		Hostname: getStringValue(target, "hostname"),
+
+		Region:   getStringValue(target, "region"),
+		User:     getStringValue(target, "user"),
+		Password: getStringValue(target, "password"),
+
+		AwsUser:     getStringValue(target, "aws_user"),
+		AwsPassword: getStringValue(target, "aws_password"),
+
+		AzureClientID:     getStringValue(target, "azure_client_id"),
+		AzureClientSecret: getStringValue(target, "azure_client_secret"),
+		AzureTenantID:     getStringValue(target, "azure_tenant_id"),
+		SubscriptionId:    getStringValue(target, "subscription_id"),
+	}
+	return conf
+}
+
+func parseReporterConfig(data map[string]interface{}) map[string]ReporterConfig {
+	rc := make(map[string]ReporterConfig)
+
+	name := getStringValue(data, "name")
+	if len(name) > 0 {
+		rc[name] = ReporterConfig{}
+	}
+	return rc
+}
+
+func getStringValue(keymap map[string]interface{}, key string) string {
+	v, ok := keymap[key]
+	if ok {
+		switch v := v.(type) {
+		case string:
+			return v
+		}
+	}
+
+	return ""
 }
 
 func getStringList(v interface{}) []string {
