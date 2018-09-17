@@ -145,7 +145,7 @@ resource "aws_instance" "web" {
     ]
 
     reporter {
-      name = "json"
+      name = "cli"
     }
 
     on_failure = "continue"
@@ -164,7 +164,7 @@ resource "null_resource" "inspec_aws" {
     }
 
     reporter {
-      name = "json"
+      name = "cli"
     }
 
     on_failure = "continue"
