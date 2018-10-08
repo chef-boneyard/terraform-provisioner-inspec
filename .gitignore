@@ -1,2 +1,7 @@
+dist/*
 terraform-provisioner-inspec
 vendor
+.terraform
+id_rsa*
+*.tfstate
+*.tfstate.backup
