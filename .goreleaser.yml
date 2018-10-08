@@ -1,9 +1,5 @@
 # This is an example goreleaser.yaml file with some sane defaults.
 # Make sure to check the documentation at http://goreleaser.com
-before:
-   hooks:
-    #  - dep ensure
-builds:
 - env:
   - CGO_ENABLED=0
 archive:
@@ -11,7 +7,6 @@ archive:
     darwin: Darwin
     linux: Linux
     windows: Windows
-    386: i386
     amd64: x86_64
 checksum:
   name_template: 'checksums.txt'
