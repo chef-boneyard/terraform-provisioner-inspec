@@ -3,12 +3,49 @@
 The InSpec provisioner executes InSpec during the terraform apply run. It supports verifying:
 
 * instances
-* aws, azure, gcp cloud services
+* cloud platforms like azure, aws, digitalocean or gcp
 
 ## Installation
 
-https://www.terraform.io/docs/plugins/basics.html#installing-a-plugin
+*One-Liner Install (Linux)*
 
+```
+mkdir -p ~/.terraform.d/plugins/
+curl -s https://api.github.com/repos/chris-rock/terraform-provisioner-inspec/releases/latest \
+  | grep --color=none browser_download_url \
+  | grep --color=none Linux_x86_64 \
+  | cut -d '"' -f 4 \
+  | xargs curl -L | tar zxv -C ~/.terraform.d/plugins/
+```
+
+*One-Liner Install (Mac)*
+
+```
+mkdir -p ~/.terraform.d/plugins/
+curl -s https://api.github.com/repos/chris-rock/terraform-provisioner-inspec/releases/latest \
+  | grep --color=none browser_download_url \
+  | grep --color=none Darwin_x86_64 \
+  | cut -d '"' -f 4 \
+  | xargs curl -L | tar zxv -C ~/.terraform.d/plugins/
+```
+
+If you encounter issues during installation, please also have a look at [Terraform Plugin Basics](https://www.terraform.io/docs/plugins/basics.html#installing-a-plugin)
+
+*Linux*
+
+```
+mkdir -p ~/.terraform.d/plugins/
+curl -L https://github.com/chris-rock/terraform-provisioner-inspec/releases/download/0.1.0/terraform-provisioner-inspec_0.1.0_Linux_x86_64.tar.gz -o terraform-provisioner-inspec.tar.gz
+tar -xvzf terraform-provisioner-inspec.tar.gz -C ~/.terraform.d/plugins/
+```
+
+*Mac*
+
+```
+mkdir -p ~/.terraform.d/plugins/
+curl -L https://github.com/chris-rock/terraform-provisioner-inspec/releases/download/0.1.0/terraform-provisioner-inspec_0.1.0_Darwin_x86_64.tar.gz -o terraform-provisioner-inspec.tar.gz
+tar -xvzf terraform-provisioner-inspec.tar.gz -C ~/.terraform.d/plugins/
+```
 
 ## Build the provisioner plugin
 
@@ -27,8 +64,9 @@ $ dep ensure
 $ make build
 ```
 
-
 ## Targets
+
+The provisionier can be uses with any instance. E.g for AWS the following runs InSpec and verifies the security with the [DevSec baselines](https://dev-sec.io/).
 
 **Instances**
 
@@ -57,7 +95,9 @@ resource "aws_instance" "web" {
 }
 ```
 
-**AWS**
+**Cloud Platform**
+
+InSpec has a wide-support for cloud-platforms. This allows us to verify configuration like security groups. See InSpec [AWS](https://www.inspec.io/docs/reference/resources/#aws-resources), [Azure](https://www.inspec.io/docs/reference/resources/#azure-resources) and [GCP](https://www.inspec.io/docs/reference/resources/#gcp-resources) documentation
 
 ```
 resource "null_resource" "inspec_aws" {
