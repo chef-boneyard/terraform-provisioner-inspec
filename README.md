@@ -5,6 +5,29 @@ The InSpec provisioner executes InSpec during the terraform apply run. It suppor
 * instances
 * aws, azure, gcp cloud services
 
+## Installation
+
+https://www.terraform.io/docs/plugins/basics.html#installing-a-plugin
+
+
+## Build the provisioner plugin
+
+Clone repository to: `$GOPATH/src/github.com/chris-rock/terraform-provisioner-inspec`
+
+```sh
+$ mkdir -p $GOPATH/src/github.com/chris-rock; cd $GOPATH/src/github.com/chris-rock
+$ git clone git@github.com:chris-rock/terraform-provisioner-inspec
+```
+
+Enter the provider directory and build the provider
+
+```sh
+$ cd $GOPATH/src/github.com/chris-rock/terraform-provisioner-inspec
+$ dep ensure
+$ make build
+```
+
+
 ## Targets
 
 **Instances**
