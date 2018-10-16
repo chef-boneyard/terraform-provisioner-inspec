@@ -7,7 +7,6 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/rs/zerolog/log"
 )
 
 type ReporterConfig struct {
@@ -121,7 +120,6 @@ func validateFn(c *terraform.ResourceConfig) (ws []string, es []error) {
 }
 
 func applyFn(ctx context.Context) error {
-	log.Info().Msg("apply inspec")
 	s := ctx.Value(schema.ProvRawStateKey).(*terraform.InstanceState)
 	data := ctx.Value(schema.ProvConfigDataKey).(*schema.ResourceData)
 	o := ctx.Value(schema.ProvOutputKey).(terraform.UIOutput)
@@ -131,7 +129,7 @@ func applyFn(ctx context.Context) error {
 		return errors.New("new profile defined")
 	}
 
-	o.Output(fmt.Sprintf("Run the following profiles %v", profiles))
+	o.Output(fmt.Sprintf("Run the following InSpec profiles %v", profiles))
 
 	// read the target
 	target := getStringMap(data.Get("target"))
@@ -142,14 +140,14 @@ func applyFn(ctx context.Context) error {
 	conf.Reporter = parseReporterConfig(reporter)
 
 	switch conf.Backend {
-	case "aws", "azure", "gcp":
+	case "aws", "azure", "gcp", "digitalocean":
 		// create target url and use aws options
 		return runRemote(ctx, s, data, o, profiles, conf)
 	case "":
 		// install inspec and run it from the instance
 		return runLocal(ctx, s, data, o, profiles, conf)
 	default:
-		return errors.New(fmt.Sprintf("backend %s is not supported yet", conf.Backend))
+		return errors.New(fmt.Sprintf("tf> inspec backend %s is not supported yet", conf.Backend))
 	}
 
 	return nil
