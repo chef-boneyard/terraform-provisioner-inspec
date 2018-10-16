@@ -5,6 +5,8 @@ The InSpec provisioner executes InSpec during the terraform apply run. It suppor
 * instances
 * cloud platforms like azure, aws, digitalocean or gcp
 
+Note: This is an early project and is not working on Windows environments yet. Coming soon.
+
 ## Installation
 
 *One-Liner Install (Linux)*
@@ -61,7 +63,10 @@ Enter the provider directory and build the provider
 ```sh
 $ cd $GOPATH/src/github.com/inspec/terraform-provisioner-inspec
 $ dep ensure
-$ make build
+# build on linux
+$ make build/linux
+# build on macos
+$ make build/darwin
 ```
 
 ## Targets
