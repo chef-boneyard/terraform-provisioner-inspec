@@ -11,7 +11,7 @@ The InSpec provisioner executes InSpec during the terraform apply run. It suppor
 
 ```
 mkdir -p ~/.terraform.d/plugins/
-curl -s https://api.github.com/repos/chris-rock/terraform-provisioner-inspec/releases/latest \
+curl -L -s https://api.github.com/repos/inspec/terraform-provisioner-inspec/releases/latest \
   | grep --color=none browser_download_url \
   | grep --color=none Linux_x86_64 \
   | cut -d '"' -f 4 \
@@ -22,7 +22,7 @@ curl -s https://api.github.com/repos/chris-rock/terraform-provisioner-inspec/rel
 
 ```
 mkdir -p ~/.terraform.d/plugins/
-curl -s https://api.github.com/repos/chris-rock/terraform-provisioner-inspec/releases/latest \
+curl -L -s https://api.github.com/repos/inspec/terraform-provisioner-inspec/releases/latest \
   | grep --color=none browser_download_url \
   | grep --color=none Darwin_x86_64 \
   | cut -d '"' -f 4 \
@@ -35,7 +35,7 @@ If you encounter issues during installation, please also have a look at [Terrafo
 
 ```
 mkdir -p ~/.terraform.d/plugins/
-curl -L https://github.com/chris-rock/terraform-provisioner-inspec/releases/download/0.1.0/terraform-provisioner-inspec_0.1.0_Linux_x86_64.tar.gz -o terraform-provisioner-inspec.tar.gz
+curl -L https://github.com/inspec/terraform-provisioner-inspec/releases/download/0.1.0/terraform-provisioner-inspec_0.1.0_Linux_x86_64.tar.gz -o terraform-provisioner-inspec.tar.gz
 tar -xvzf terraform-provisioner-inspec.tar.gz -C ~/.terraform.d/plugins/
 ```
 
@@ -43,23 +43,23 @@ tar -xvzf terraform-provisioner-inspec.tar.gz -C ~/.terraform.d/plugins/
 
 ```
 mkdir -p ~/.terraform.d/plugins/
-curl -L https://github.com/chris-rock/terraform-provisioner-inspec/releases/download/0.1.0/terraform-provisioner-inspec_0.1.0_Darwin_x86_64.tar.gz -o terraform-provisioner-inspec.tar.gz
+curl -L https://github.com/inspec/terraform-provisioner-inspec/releases/download/0.1.0/terraform-provisioner-inspec_0.1.0_Darwin_x86_64.tar.gz -o terraform-provisioner-inspec.tar.gz
 tar -xvzf terraform-provisioner-inspec.tar.gz -C ~/.terraform.d/plugins/
 ```
 
 ## Build the provisioner plugin
 
-Clone repository to: `$GOPATH/src/github.com/chris-rock/terraform-provisioner-inspec`
+Clone repository to: `$GOPATH/src/github.com/inspec/terraform-provisioner-inspec`
 
 ```sh
-$ mkdir -p $GOPATH/src/github.com/chris-rock; cd $GOPATH/src/github.com/chris-rock
-$ git clone git@github.com:chris-rock/terraform-provisioner-inspec
+$ mkdir -p $GOPATH/src/github.com/inspec; cd $GOPATH/src/github.com/inspec
+$ git clone git@github.com:inspec/terraform-provisioner-inspec
 ```
 
 Enter the provider directory and build the provider
 
 ```sh
-$ cd $GOPATH/src/github.com/chris-rock/terraform-provisioner-inspec
+$ cd $GOPATH/src/github.com/inspec/terraform-provisioner-inspec
 $ dep ensure
 $ make build
 ```

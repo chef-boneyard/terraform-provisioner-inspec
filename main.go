@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/chris-rock/terraform-provisioner-inspec/inspec"
+	"github.com/inspec/terraform-provisioner-inspec/inspec"
 	"github.com/hashicorp/terraform/plugin"
 	"github.com/hashicorp/terraform/terraform"
 )
